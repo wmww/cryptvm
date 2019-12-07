@@ -1,9 +1,10 @@
-#include <iostream>
+#include "vm.h"
 
-#include "binfhecontext.h"
+#include <iostream>
 
 int main()
 {
-    std::cout << "Hello, World!" << std::endl;
+    auto const vm = cryptvm::VM::make();
+    vm->iteration();
     return 0;
 }

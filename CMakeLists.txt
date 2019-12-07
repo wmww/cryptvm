@@ -21,8 +21,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -pthread -fopenmp")
 
 set(cryptvm_sources
     src/main.cpp
+    src/vm.cpp      src/vm.h
 )
 
 add_executable(cryptvm ${cryptvm_sources})
 
 add_dependencies(cryptvm allmodules)
+target_link_libraries(cryptvm PALISADEbinfhe)

@@ -1,0 +1,4 @@
+[submodule "palisade"]
+	path = palisade
+	url = https://gitlab.com/palisade/palisade-development.git
+	branch = v1.7.a-dev

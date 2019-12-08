@@ -9,13 +9,16 @@ unsigned const data_pool_size = 1000;
 struct cryptvm::Context::Impl : Context
 {
     std::unique_ptr<lbcrypto::BinFHEContext> const ctx_;
+    std::optional<lbcrypto::LWEPrivateKey> key;
     std::vector<lbcrypto::LWECiphertext> zeros;
     std::vector<lbcrypto::LWECiphertext> ones;
 
     Impl(std::unique_ptr<lbcrypto::BinFHEContext> ctx,
+         std::optional<lbcrypto::LWEPrivateKey> const key,
          std::vector<lbcrypto::LWECiphertext> zeros,
          std::vector<lbcrypto::LWECiphertext> ones)
         : ctx_{std::move(ctx)}
+        , key{key}
         , zeros{std::move(zeros)}
         , ones{std::move(ones)}
     {}
@@ -23,6 +26,11 @@ struct cryptvm::Context::Impl : Context
     auto ctx() const -> lbcrypto::BinFHEContext& override
     {
         return *ctx_;
+    }
+
+    auto private_key() const -> std::optional<std::shared_ptr<lbcrypto::LWEPrivateKeyImpl>> override
+    {
+        return key;
     }
 
     auto zero() -> lbcrypto::ConstLWECiphertext override
@@ -42,9 +50,18 @@ struct cryptvm::Context::Impl : Context
         ones.pop_back();
         return value;
     }
+
+    auto decrypt(std::shared_ptr<lbcrypto::LWECiphertextImpl const> const& bit) const -> bool override
+    {
+        if (!key)
+            throw std::runtime_error("Can not decrypt number without private key");
+        lbcrypto::LWEPlaintext result;
+        ctx_->Decrypt(key.value(), bit, &result);
+        return result;
+    }
 };
 
-auto cryptvm::Context::generate() -> std::pair<std::unique_ptr<Context>, std::shared_ptr<lbcrypto::LWEPrivateKeyImpl>>
+auto cryptvm::Context::generate() -> std::unique_ptr<Context>
 {
     std::cerr << "Generating binary FHE Context…" << std::endl;
     auto ctx = std::make_unique<lbcrypto::BinFHEContext>();
@@ -60,7 +77,6 @@ auto cryptvm::Context::generate() -> std::pair<std::unique_ptr<Context>, std::sh
     for (unsigned i = 0; i < data_pool_size; i++)
         ones.push_back(ctx->Encrypt(key, 1));
     auto const zero = ctx->Encrypt(key, 0);
-    auto context = std::make_unique<Impl>(std::move(ctx), std::move(zeros), std::move(ones));
     std::cerr << "…done" << std::endl;
-    return std::make_pair(std::move(context), key);
+    return std::make_unique<Impl>(std::move(ctx), key, std::move(zeros), std::move(ones));
 }

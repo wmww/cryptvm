@@ -34,7 +34,8 @@ struct cryptvm::Tape::Impl : Tape
     auto access(Number const& address) -> std::unique_ptr<Number> override
     {
         auto const inverse_address = address.inverse();
-        auto const flag = context->zero();
+        std::cerr << "Accessing address " << address.decrypt() << " with inverse " << inverse_address->decrypt() << std::endl;
+        auto const flag = context->one();
         auto value = Number::from_plaintext(context, bits, 0);
         scan(address, *inverse_address, flag, 0, 0, *value);
         return value;
@@ -50,7 +51,7 @@ struct cryptvm::Tape::Impl : Tape
         if (position >= data.size()) {
             return;
         } else if (bit >= address.bits()) {
-            std::cerr << "Scanning cell " << position << std::endl;
+            std::cerr << "Scanning cell " << position << " (value: " << data[position]->decrypt() << ", flag: " << context->decrypt(flag) << ")" << std::endl;
             for (unsigned i = 0; i < bits; i++) {
                 accumulator[i] =
                     context->ctx().EvalBinGate(lbcrypto::OR,
@@ -59,7 +60,7 @@ struct cryptvm::Tape::Impl : Tape
             }
         } else {
             auto const end_position = (position | (1 << (address.bits() - bit))) - 1;
-            std::cerr << "Scanning tape from " << position << " to " << end_position << std::endl;
+            std::cerr << "Scanning tape from " << position << " to " << end_position << " (flag: " << context->decrypt(flag) << ")" << std::endl;
 
             auto const left_flag = context->ctx().EvalBinGate(lbcrypto::AND, flag, inverse_address[bit]);
             scan(address, inverse_address, left_flag, position, bit + 1, accumulator);
@@ -72,7 +73,7 @@ struct cryptvm::Tape::Impl : Tape
 
     void set(unsigned address, Number const& value) override
     {
-        if (address > data.size())
+        if (address >= data.size())
             throw std::out_of_range("Set plaintext index outside the data tape");
         data[address] = value.clone();
     }

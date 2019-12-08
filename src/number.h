@@ -22,7 +22,7 @@ struct Number
     virtual auto bits() const -> size_t = 0;
     virtual auto operator[](int i) const -> std::shared_ptr<lbcrypto::LWECiphertextImpl const> const& = 0;
     virtual auto operator[](int i) -> std::shared_ptr<lbcrypto::LWECiphertextImpl const>& = 0;
-    virtual auto decrypt(std::shared_ptr<lbcrypto::LWEPrivateKeyImpl const> const& key) -> unsigned = 0;
+    virtual auto decrypt() const -> unsigned = 0;
 
     virtual auto inverse() const -> std::unique_ptr<Number> = 0;
 

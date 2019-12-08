@@ -38,14 +38,12 @@ struct cryptvm::Number::Impl : Number
         return bit_vec[i];
     }
 
-    auto decrypt(lbcrypto::ConstLWEPrivateKey const& key) -> unsigned override
+    auto decrypt() const -> unsigned override
     {
         unsigned value = 0;
         for (unsigned i = 0; i < bit_vec.size(); i++) {
             value <<= 1;
-            lbcrypto::LWEPlaintext result;
-            context->ctx().Decrypt(key, bit_vec[i], &result);
-            if (result)
+            if (context->decrypt(bit_vec[i]))
                 value |= 1;
         }
         return value;
@@ -57,7 +55,7 @@ struct cryptvm::Number::Impl : Number
         for (unsigned i = 0; i < bits(); i++) {
             inverse_bit_vec.push_back(context->ctx().EvalNOT(bit_vec[i]));
         }
-        return std::make_unique<Impl>(context, bit_vec);
+        return std::make_unique<Impl>(context, inverse_bit_vec);
     }
 };
 

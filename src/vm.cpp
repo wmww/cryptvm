@@ -20,11 +20,11 @@ struct cryptvm::VM::Impl : VM
     void iteration() override
     {
         std::vector<std::shared_ptr<Number>> const tape_values{
-            Number::from_plaintext(context, 8, 5),
-            Number::from_plaintext(context, 8, 4),
-            Number::from_plaintext(context, 8, 3),
-            Number::from_plaintext(context, 8, 2),
-            Number::from_plaintext(context, 8, 1),
+            Number::from_plaintext(context, 8_bit, 5),
+            Number::from_plaintext(context, 8_bit, 4),
+            Number::from_plaintext(context, 8_bit, 3),
+            Number::from_plaintext(context, 8_bit, 2),
+            Number::from_plaintext(context, 8_bit, 1),
         };
 
         for (unsigned i = 0; i < tape_values.size(); i++)
@@ -32,7 +32,7 @@ struct cryptvm::VM::Impl : VM
 
         for (unsigned i = 0; i < tape_values.size(); i++)
         {
-            auto const accessed = tape->access(*Number::from_plaintext(context, 8, i));
+            auto const accessed = tape->access(*Number::from_plaintext(context, 16_bit, i));
             std::cerr << "Accessed from index " << i << ": " << accessed->decrypt() << std::endl;
         }
     }
@@ -41,6 +41,6 @@ struct cryptvm::VM::Impl : VM
 auto cryptvm::VM::make() -> std::unique_ptr<VM>
 {
     std::shared_ptr<Context> const context = Context::generate();
-    auto tape = Tape::make(context, 8, 5);
+    auto tape = Tape::make(context, 8_bit, 5);
     return std::make_unique<Impl>(context, std::move(tape));
 }

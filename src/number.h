@@ -15,11 +15,18 @@ namespace cryptvm
 {
 struct Context;
 
+struct BitWidth
+{
+    unsigned width;
+};
+
+auto operator "" _bit(unsigned long long value) -> BitWidth;
+
 struct Number
 {
     virtual ~Number() = default;
     virtual auto clone() const -> std::unique_ptr<Number> = 0;
-    virtual auto bits() const -> size_t = 0;
+    virtual auto bit_width() const -> unsigned = 0;
     virtual auto operator[](int i) const -> std::shared_ptr<lbcrypto::LWECiphertextImpl const> const& = 0;
     virtual auto operator[](int i) -> std::shared_ptr<lbcrypto::LWECiphertextImpl const>& = 0;
     virtual auto decrypt() const -> unsigned = 0;
@@ -28,13 +35,13 @@ struct Number
 
     struct Impl;
 
-    static auto from_plaintext(std::shared_ptr<Context> const& context, size_t bits, unsigned value)
+    static auto from_plaintext(std::shared_ptr<Context> const& context, BitWidth const& width, unsigned value)
         -> std::unique_ptr<Number>;
 
     static auto from_bits(std::shared_ptr<Context> const& context, std::vector<bool> const& bits)
         -> std::unique_ptr<Number>;
 
-    static auto zero(std::shared_ptr<Context> const& context, size_t bits) -> std::unique_ptr<Number>;
+    static auto zero(std::shared_ptr<Context> const& context, BitWidth const& width) -> std::unique_ptr<Number>;
 };
 } // namespace cryptvm
 

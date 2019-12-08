@@ -13,6 +13,7 @@ namespace cryptvm
 {
 struct Context;
 struct Number;
+struct BitWidth;
 
 struct Tape
 {
@@ -25,7 +26,7 @@ struct Tape
 
     struct Impl;
 
-    static auto make(std::shared_ptr<Context> const& ctx, size_t bits, size_t length) -> std::unique_ptr<Tape>;
+    static auto make(std::shared_ptr<Context> const& ctx, BitWidth const& width, size_t length) -> std::unique_ptr<Tape>;
 };
 } // namespace cryptvm
 

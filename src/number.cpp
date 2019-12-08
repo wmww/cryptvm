@@ -7,6 +7,11 @@
 #include <vector>
 #include <algorithm>
 
+auto cryptvm::operator "" _bit(unsigned long long value) -> cryptvm::BitWidth
+{
+    return cryptvm::BitWidth{(unsigned)value};
+}
+
 struct cryptvm::Number::Impl : Number
 {
     std::shared_ptr<Context> const context;
@@ -23,7 +28,7 @@ struct cryptvm::Number::Impl : Number
         return std::make_unique<Impl>(context, bit_vec);
     }
 
-    auto bits() const -> size_t override
+    auto bit_width() const -> unsigned override
     {
         return bit_vec.size();
     }
@@ -52,24 +57,24 @@ struct cryptvm::Number::Impl : Number
     auto inverse() const -> std::unique_ptr<Number> override
     {
         std::vector<std::shared_ptr<lbcrypto::LWECiphertextImpl const>> inverse_bit_vec;
-        for (unsigned i = 0; i < bits(); i++) {
+        for (unsigned i = 0; i < bit_vec.size(); i++) {
             inverse_bit_vec.push_back(context->ctx().EvalNOT(bit_vec[i]));
         }
         return std::make_unique<Impl>(context, inverse_bit_vec);
     }
 };
 
-auto cryptvm::Number::from_plaintext(std::shared_ptr<Context> const& context, size_t bits, unsigned value)
+auto cryptvm::Number::from_plaintext(std::shared_ptr<Context> const& context, BitWidth const& width, unsigned value)
     -> std::unique_ptr<Number>
 {
     auto temp = value;
     std::vector<bool> bit_vec;
-    for (unsigned i = 0; i < bits; i++) {
+    for (unsigned i = 0; i < width.width; i++) {
         bit_vec.push_back(temp % 2);
         temp /= 2;
     }
     if (temp)
-        std::cerr << "Number " << value << " didn't fit in " << bits << " bits" << std::endl;
+        std::cerr << "Number " << value << " didn't fit in " << width.width << " bits" << std::endl;
     std::reverse(bit_vec.begin(), bit_vec.end());
     return from_bits(context, bit_vec);
 }
@@ -84,10 +89,10 @@ auto cryptvm::Number::from_bits(std::shared_ptr<Context> const& context, std::ve
     return std::make_unique<Impl>(context, bit_vec);
 }
 
-auto cryptvm::Number::zero(std::shared_ptr<Context> const& context, size_t bits) -> std::unique_ptr<Number>
+auto cryptvm::Number::zero(std::shared_ptr<Context> const& context, BitWidth const& width) -> std::unique_ptr<Number>
 {
     std::vector<std::shared_ptr<lbcrypto::LWECiphertextImpl const>> bit_vec;
-    for (unsigned i = 0; i < bits; i++)
+    for (unsigned i = 0; i < width.width; i++)
         bit_vec.push_back(std::make_shared<lbcrypto::LWECiphertextImpl>(*context->zero()));
     return std::make_unique<Impl>(context, bit_vec);
 }

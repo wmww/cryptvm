@@ -36,20 +36,21 @@ struct cryptvm::Tape::Impl : Tape
         auto const inverse_address = address.inverse();
         auto const flag = context->zero();
         auto value = Number::from_plaintext(context, bits, 0);
-        access(address, *inverse_address, flag, 0, 0, *value);
+        scan(address, *inverse_address, flag, 0, 0, *value);
         return value;
     }
 
-    void access(Number const& address,
-                Number const& inverse_address,
-                lbcrypto::ConstLWECiphertext const& flag,
-                unsigned const position,
-                unsigned const bit,
-                Number& accumulator)
+    void scan(Number const& address,
+              Number const& inverse_address,
+              lbcrypto::ConstLWECiphertext const& flag,
+              unsigned const position,
+              unsigned const bit,
+              Number& accumulator)
     {
         if (position >= data.size()) {
             return;
         } else if (bit >= address.bits()) {
+            std::cerr << "Scanning cell " << position << std::endl;
             for (unsigned i = 0; i < bits; i++) {
                 accumulator[i] =
                     context->ctx().EvalBinGate(lbcrypto::OR,
@@ -57,12 +58,15 @@ struct cryptvm::Tape::Impl : Tape
                                                accumulator[i]);
             }
         } else {
+            auto const end_position = (position | (1 << (address.bits() - bit))) - 1;
+            std::cerr << "Scanning tape from " << position << " to " << end_position << std::endl;
+
             auto const left_flag = context->ctx().EvalBinGate(lbcrypto::AND, flag, inverse_address[bit]);
-            access(address, inverse_address, left_flag, position, bit + 1, accumulator);
+            scan(address, inverse_address, left_flag, position, bit + 1, accumulator);
 
             auto const right_position = position | (1 << (address.bits() - 1 - bit));
             auto const right_flag = context->ctx().EvalBinGate(lbcrypto::AND, flag, address[bit]);
-            access(address, inverse_address, right_flag, right_position, bit + 1, accumulator);
+            scan(address, inverse_address, right_flag, right_position, bit + 1, accumulator);
         }
     }
 

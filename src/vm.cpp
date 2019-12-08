@@ -21,17 +21,17 @@ struct cryptvm::VM::Impl : VM
 
     void iteration() override
     {
-        auto const zero = Number::from_plaintext(context, 8, 0);
-        auto const one = Number::from_bits(context, {0, 0, 0, 0, 0, 1, 0, 1});
-        auto const two = Number::from_plaintext(context, 8, 2);
-        auto const three = Number::from_plaintext(context, 8, 3);
+        auto const zero = Number::from_plaintext(context, 2, 0);
+        auto const one = Number::from_bits(context, {0, 1});
+        auto const two = Number::from_plaintext(context, 2, 2);
+        auto const three = Number::from_plaintext(context, 2, 3);
 
         tape->set(0, *one);
         tape->set(1, *one);
         tape->set(2, *zero);
         tape->set(3, *two);
 
-        auto const accessed = tape->access(3);
+        auto const accessed = tape->access(*Number::from_plaintext(context, 8, 2));
         auto const pt = accessed->decrypt(key);
 
         std::cout << "Value: " << pt << std::endl;
@@ -43,6 +43,6 @@ auto cryptvm::VM::make() -> std::unique_ptr<VM>
     auto context_and_key = Context::generate();
     std::shared_ptr<Context> context = std::move(context_and_key.first);
     auto key = context_and_key.second;
-    auto tape = Tape::make(context, 8, 100);
+    auto tape = Tape::make(context, 2, 4);
     return std::make_unique<Impl>(context, key, std::move(tape));
 }

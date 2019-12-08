@@ -1,5 +1,6 @@
 #include "vm.h"
 #include "tape.h"
+#include "context.h"
 
 #include <binfhecontext.h>
 
@@ -7,12 +8,12 @@
 
 struct cryptvm::VM::Impl : VM
 {
-    std::shared_ptr<lbcrypto::BinFHEContext> const ctx;
+    std::shared_ptr<Context> const ctx;
     lbcrypto::LWEPrivateKey const key;
     std::unique_ptr<Tape> const tape;
 
-    Impl(std::shared_ptr<lbcrypto::BinFHEContext> ctx, lbcrypto::LWEPrivateKey key, std::unique_ptr<Tape> tape)
-        : ctx{std::move(ctx)}
+    Impl(std::shared_ptr<Context> const& ctx, lbcrypto::LWEPrivateKey key, std::unique_ptr<Tape> tape)
+        : ctx{ctx}
         , key{key}
         , tape{std::move(tape)}
     {}
@@ -25,12 +26,9 @@ struct cryptvm::VM::Impl : VM
 
 auto cryptvm::VM::make() -> std::unique_ptr<VM>
 {
-    auto ctx = std::make_shared<lbcrypto::BinFHEContext>();
-    ctx->GenerateBinFHEContext(MEDIUM);
-    auto const key = ctx->KeyGen();
-    std::cerr << "Generating bootstrapping keys…" << std::endl;
-    ctx->BTKeyGen(key);
-    std::cerr << "…done" << std::endl;
-    auto tape = Tape::make(ctx, ctx->Encrypt(key, 0), 8, 100);
-    return std::make_unique<Impl>(std::move(ctx), key, std::move(tape));
+    auto context_and_key = Context::generate();
+    std::shared_ptr<Context> context = std::move(context_and_key.first);
+    auto key = context_and_key.second;
+    auto tape = Tape::make(context, 8, 100);
+    return std::make_unique<Impl>(context, key, std::move(tape));
 }

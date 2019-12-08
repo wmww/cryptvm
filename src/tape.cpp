@@ -6,12 +6,12 @@
 #include <vector>
 #include <iostream>
 
-struct cryptvm::Tape::Impl: Tape
+struct cryptvm::Tape::Impl : Tape
 {
-    std::shared_ptr<lbcrypto::BinFHEContext> const ctx;
+    std::shared_ptr<Context> const ctx;
     std::vector<std::unique_ptr<Number>> const data;
 
-    Impl(std::shared_ptr<lbcrypto::BinFHEContext> const& ctx, std::vector<std::unique_ptr<Number>> data)
+    Impl(std::shared_ptr<Context> const& ctx, std::vector<std::unique_ptr<Number>> data)
         : ctx{ctx}
         , data{std::move(data)}
     {}
@@ -41,14 +41,10 @@ struct cryptvm::Tape::Impl: Tape
     }
 };
 
-auto cryptvm::Tape::make(std::shared_ptr<lbcrypto::BinFHEContext> const& ctx,
-                    std::shared_ptr<lbcrypto::LWECiphertextImpl> const& zero,
-                    size_t bits,
-                    size_t length)
-    ->std::unique_ptr<Tape>
+auto cryptvm::Tape::make(std::shared_ptr<Context> const& ctx, size_t bits, size_t length) -> std::unique_ptr<Tape>
 {
     std::vector<std::unique_ptr<Number>> data;
     for (unsigned i = 0; i < length; i++)
-        data.push_back(Number::from_bit(ctx, bits, zero));
+        data.push_back(Number::zero(ctx, bits));
     return std::make_unique<Impl>(ctx, std::move(data));
 }

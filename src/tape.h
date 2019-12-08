@@ -11,6 +11,7 @@ class LWECiphertextImpl;
 
 namespace cryptvm
 {
+struct Context;
 struct Number;
 
 struct Tape
@@ -23,10 +24,7 @@ struct Tape
 
     struct Impl;
 
-    static auto make(std::shared_ptr<lbcrypto::BinFHEContext> const& ctx,
-                     std::shared_ptr<lbcrypto::LWECiphertextImpl> const& zero,
-                     size_t bits,
-                     size_t length) -> std::unique_ptr<Tape>;
+    static auto make(std::shared_ptr<Context> const& ctx, size_t bits, size_t length) -> std::unique_ptr<Tape>;
 };
 } // namespace cryptvm
 

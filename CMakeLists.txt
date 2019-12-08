@@ -21,6 +21,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -pthread -fopenmp")
 
 set(cryptvm_sources
     src/main.cpp
+    src/context.cpp src/context.h
     src/vm.cpp      src/vm.h
     src/tape.cpp    src/tape.h
     src/number.cpp  src/number.h

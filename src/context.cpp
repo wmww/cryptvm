@@ -65,7 +65,7 @@ auto cryptvm::Context::generate() -> std::unique_ptr<Context>
 {
     std::cerr << "Generating binary FHE Context…" << std::endl;
     auto ctx = std::make_unique<lbcrypto::BinFHEContext>();
-    ctx->GenerateBinFHEContext(TOY);
+    ctx->GenerateBinFHEContext(MEDIUM);
     auto const key = ctx->KeyGen();
     std::cerr << "Generating bootstrapping keys…" << std::endl;
     ctx->BTKeyGen(key);

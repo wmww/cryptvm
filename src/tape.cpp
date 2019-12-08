@@ -1,5 +1,6 @@
 #include "tape.h"
 #include "number.h"
+#include "context.h"
 
 #include <binfhecontext.h>
 
@@ -8,11 +9,13 @@
 
 struct cryptvm::Tape::Impl : Tape
 {
-    std::shared_ptr<Context> const ctx;
-    std::vector<std::unique_ptr<Number>> const data;
+    std::shared_ptr<Context> const context;
+    size_t const bits;
+    std::vector<std::unique_ptr<Number>> data;
 
-    Impl(std::shared_ptr<Context> const& ctx, std::vector<std::unique_ptr<Number>> data)
-        : ctx{ctx}
+    Impl(std::shared_ptr<Context> const& context, std::vector<std::unique_ptr<Number>> data)
+        : context{context}
+        , bits{data[0]->bits()}
         , data{std::move(data)}
     {}
 
@@ -21,16 +24,53 @@ struct cryptvm::Tape::Impl : Tape
         return data.size();
     }
 
-    auto access(unsigned address) -> Number const& override
+    auto access(unsigned address) -> std::unique_ptr<Number> override
     {
-        return *data[address];
+        if (address > data.size())
+            throw std::out_of_range("Accessed plaintext index outside the data tape");
+        return data[address]->clone();
     }
 
-    auto access(Number const& address) -> Number const& override
+    auto access(Number const& address) -> std::unique_ptr<Number> override
     {
-        (void)address;
-        std::cerr << "cryptvm::Tape::Impl::access() not implemented" << std::endl;
-        return *data[0];
+        auto const inverse_address = address.inverse();
+        auto const flag = context->zero();
+        auto value = Number::from_plaintext(context, bits, 0);
+        access(address, *inverse_address, flag, 0, 0, *value);
+        return value;
+    }
+
+    void access(Number const& address,
+                Number const& inverse_address,
+                lbcrypto::ConstLWECiphertext const& flag,
+                unsigned const position,
+                unsigned const bit,
+                Number& accumulator)
+    {
+        if (position >= data.size()) {
+            return;
+        } else if (bit >= address.bits()) {
+            for (unsigned i = 0; i < bits; i++) {
+                accumulator[i] =
+                    context->ctx().EvalBinGate(lbcrypto::OR,
+                                               context->ctx().EvalBinGate(lbcrypto::AND, flag, (*data[position])[i]),
+                                               accumulator[i]);
+            }
+        } else {
+            auto const left_flag = context->ctx().EvalBinGate(lbcrypto::AND, flag, inverse_address[bit]);
+            access(address, inverse_address, left_flag, position, bit + 1, accumulator);
+
+            auto const right_position = position | (1 << (address.bits() - 1 - bit));
+            auto const right_flag = context->ctx().EvalBinGate(lbcrypto::AND, flag, address[bit]);
+            access(address, inverse_address, right_flag, right_position, bit + 1, accumulator);
+        }
+    }
+
+    void set(unsigned address, Number const& value) override
+    {
+        if (address > data.size())
+            throw std::out_of_range("Set plaintext index outside the data tape");
+        data[address] = value.clone();
     }
 
     void set(Number const& address, Number const& value) override

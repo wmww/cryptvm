@@ -18,8 +18,9 @@ struct Tape
 {
     virtual ~Tape() = default;
     virtual auto length() -> size_t = 0;
-    virtual auto access(unsigned address) -> Number const& = 0;
-    virtual auto access(Number const& address) -> Number const& = 0;
+    virtual auto access(unsigned address) -> std::unique_ptr<Number> = 0;
+    virtual auto access(Number const& address) -> std::unique_ptr<Number> = 0;
+    virtual void set(unsigned address, Number const& value) = 0;
     virtual void set(Number const& address, Number const& value) = 0;
 
     struct Impl;
